@@ -158,12 +158,18 @@
             justify-content: center;
             font-size: 4rem;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
         }
 
         .featuredimage img {
             max-width: 80%;
             max-height: 80%;
             object-fit: contain;
+        }
+
+        .featuredimage span {
+            font-size: 4rem;
+            line-height: 1;
         }
 
         .featuredinfo {
@@ -224,12 +230,18 @@
             align-items: center;
             justify-content: center;
             font-size: 3rem;
+            overflow: hidden;
         }
 
         .gamecardimage img {
             max-width: 70%;
             max-height: 70%;
             object-fit: contain;
+        }
+
+        .gamecardimage span {
+            font-size: 3rem;
+            line-height: 1;
         }
 
         .gamecardinfo {
@@ -300,11 +312,17 @@
             transition: all 0.3s;
         }
 
-        .modal.fullscreen {
+        .modalcontent:-webkit-full-screen {
             width: 100%;
-            max-width: 100%;
             height: 100%;
-            max-height: 100%;
+            max-width: none;
+            border-radius: 0;
+        }
+
+        .modalcontent:fullscreen {
+            width: 100%;
+            height: 100%;
+            max-width: none;
             border-radius: 0;
         }
 
@@ -378,8 +396,16 @@
             border-radius: 16px;
         }
 
+        .sentinel {
+            height: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: var(--textsecondary);
+        }
+
         @media (max-width: 700px) {
             .featuredimage { width: 140px; height: 140px; font-size: 3rem; }
+            .featuredimage span { font-size: 3rem; }
             .featuredinfo h3 { font-size: 1.4rem; }
         }
     </style>
@@ -412,6 +438,7 @@
         <section class="gameslist">
             <h2 class="sectiontitle"><i class="fas fa-gamepad"></i> all games</h2>
             <div id="gamesgrid" class="gamesgrid"></div>
+            <div id="sentinel" class="sentinel"></div>
         </section>
     </main>
 
@@ -439,6 +466,12 @@
         let filteredgames = [];
         let currentbaseurl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
         let isfullscreen = false;
+        let currentvisiblecount = 0;
+        let batchsize = 12;
+        let isLoading = false;
+        let observer = null;
+        let sentinel = null;
+        let ismodalopen = false;
 
         async function loadmanifest() {
             try {
@@ -449,7 +482,7 @@
                 allgames = data.games || [];
                 filteredgames = [...allgames];
                 renderfeatured();
-                rendergamegrid();
+                resetlazyload();
             } catch (err) {
                 console.error(err);
                 allgames = [];
@@ -460,12 +493,14 @@
             }
         }
 
-        function rendericon(icon, sizeclass = '') {
-            if (!icon) return '<i class="fas fa-gamepad"></i>';
-            if (icon.match(/^https?:\/\//i) || icon.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
-                return `<img src="${escapehtml(icon)}" alt="icon" style="width:80%; height:80%; object-fit:contain;">`;
+        function rendericon(icon) {
+            if (!icon) {
+                return '<i class="fas fa-gamepad" style="font-size: inherit;"></i>';
             }
-            return `<span style="font-size:2.5rem;">${escapehtml(icon)}</span>`;
+            if (icon.match(/^https?:\/\//i) || icon.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
+                return `<img src="${icon}" alt="icon" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fas fa-gamepad\' style=\'font-size:inherit;\'></i>';">`;
+            }
+            return `<span>${icon}</span>`;
         }
 
         function renderfeatured() {
@@ -487,14 +522,11 @@
             `;
         }
 
-        function rendergamegrid() {
+        function renderbatch(start, end) {
             const grid = document.getElementById('gamesgrid');
-            if (!filteredgames.length) {
-                grid.innerHTML = `<div style="text-align:center; padding:2rem;">no games match your search</div>`;
-                return;
-            }
-            grid.innerHTML = '';
-            filteredgames.forEach(game => {
+            const fragment = document.createDocumentFragment();
+            for (let i = start; i < end && i < filteredgames.length; i++) {
+                const game = filteredgames[i];
                 const card = document.createElement('div');
                 card.className = 'gamecard';
                 card.onclick = () => playgame(game.id);
@@ -509,8 +541,48 @@
                         </div>
                     </div>
                 `;
-                grid.appendChild(card);
-            });
+                fragment.appendChild(card);
+            }
+            grid.appendChild(fragment);
+            currentvisiblecount = end;
+            if (currentvisiblecount >= filteredgames.length) {
+                if (sentinel) sentinel.style.display = 'none';
+                if (observer) observer.disconnect();
+            }
+        }
+
+        function loadmoregames() {
+            if (isLoading) return;
+            if (currentvisiblecount >= filteredgames.length) return;
+            isLoading = true;
+            const nextend = Math.min(currentvisiblecount + batchsize, filteredgames.length);
+            renderbatch(currentvisiblecount, nextend);
+            isLoading = false;
+        }
+
+        function resetlazyload() {
+            const grid = document.getElementById('gamesgrid');
+            if (observer) observer.disconnect();
+            grid.innerHTML = '';
+            currentvisiblecount = 0;
+            if (filteredgames.length === 0) {
+                grid.innerHTML = `<div style="text-align:center; padding:2rem;">no games match your search</div>`;
+                if (sentinel) sentinel.style.display = 'none';
+                return;
+            }
+            renderbatch(0, Math.min(batchsize, filteredgames.length));
+            if (currentvisiblecount < filteredgames.length) {
+                if (sentinel) sentinel.style.display = 'block';
+                if (observer) observer.disconnect();
+                observer = new IntersectionObserver((entries) => {
+                    if (entries[0].isIntersecting && !ismodalopen) {
+                        loadmoregames();
+                    }
+                }, { threshold: 0.1, rootMargin: '200px' });
+                if (sentinel) observer.observe(sentinel);
+            } else {
+                if (sentinel) sentinel.style.display = 'none';
+            }
         }
 
         function filtergames() {
@@ -524,7 +596,7 @@
                 if (deviceval === 'mobile') matchdevice = devices.includes('mobile');
                 return matchsearch && matchdevice;
             });
-            rendergamegrid();
+            resetlazyload();
         }
 
         function buildgameurl(game) {
@@ -545,6 +617,8 @@
             loader.style.display = 'flex';
             loader.innerHTML = '<i class="fas fa-spinner fa-pulse"></i><span>fetching game...</span>';
             modal.classList.add('active');
+            ismodalopen = true;
+            unloadgamesgrid();
             const gameurl = buildgameurl(game);
             try {
                 const response = await fetch(gameurl);
@@ -582,17 +656,45 @@
             }
         }
 
-        function togglefullscreen() {
+        function unloadgamesgrid() {
+            const grid = document.getElementById('gamesgrid');
+            if (observer) observer.disconnect();
+            grid.innerHTML = '';
+            currentvisiblecount = 0;
+        }
+
+        function restoregamesgrid() {
+            if (!ismodalopen) return;
+            ismodalopen = false;
+            resetlazyload();
+        }
+
+        async function togglefullscreen() {
             const modalcontent = document.getElementById('modalcontent');
             const fullbtn = document.getElementById('fullscreenbtn');
             if (!isfullscreen) {
-                modalcontent.classList.add('fullscreen');
-                fullbtn.innerHTML = '<i class="fas fa-compress"></i>';
-                isfullscreen = true;
+                try {
+                    await modalcontent.requestFullscreen();
+                    isfullscreen = true;
+                    fullbtn.innerHTML = '<i class="fas fa-compress"></i>';
+                } catch (err) {
+                    console.warn('fullscreen not supported', err);
+                }
             } else {
-                modalcontent.classList.remove('fullscreen');
-                fullbtn.innerHTML = '<i class="fas fa-expand"></i>';
+                await document.exitFullscreen();
                 isfullscreen = false;
+                fullbtn.innerHTML = '<i class="fas fa-expand"></i>';
+            }
+        }
+
+        function onfullscreenchange() {
+            const fullbtn = document.getElementById('fullscreenbtn');
+            if (document.fullscreenElement) {
+                isfullscreen = true;
+                if (fullbtn) fullbtn.innerHTML = '<i class="fas fa-compress"></i>';
+            } else {
+                isfullscreen = false;
+                if (fullbtn) fullbtn.innerHTML = '<i class="fas fa-expand"></i>';
             }
         }
 
@@ -600,17 +702,15 @@
             const modal = document.getElementById('gamemodal');
             const iframe = document.getElementById('gameframe');
             const loader = document.getElementById('loaderplace');
-            const modalcontent = document.getElementById('modalcontent');
+            if (isfullscreen && document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
             modal.classList.remove('active');
             iframe.srcdoc = '';
             iframe.style.display = 'none';
             loader.style.display = 'flex';
             loader.innerHTML = '<i class="fas fa-spinner fa-pulse"></i><span>loading game...</span>';
-            if (isfullscreen) {
-                modalcontent.classList.remove('fullscreen');
-                document.getElementById('fullscreenbtn').innerHTML = '<i class="fas fa-expand"></i>';
-                isfullscreen = false;
-            }
+            restoregamesgrid();
         }
 
         function escapehtml(str) {
@@ -630,8 +730,10 @@
 
         window.playgame = playgame;
 
+        sentinel = document.getElementById('sentinel');
         document.getElementById('closemodal').addEventListener('click', closemodal);
         document.getElementById('fullscreenbtn').addEventListener('click', togglefullscreen);
+        document.addEventListener('fullscreenchange', onfullscreenchange);
         document.getElementById('gamemodal').addEventListener('click', (e) => {
             if (e.target.id === 'gamemodal') closemodal();
         });
@@ -640,10 +742,14 @@
         themeselect.value = savedtheme;
         settheme(savedtheme);
         themeselect.addEventListener('change', (e) => settheme(e.target.value));
-        document.getElementById('searchinput').addEventListener('input', filtergames);
-        document.getElementById('devicefilter').addEventListener('change', filtergames);
+        document.getElementById('searchinput').addEventListener('input', () => {
+            filtergames();
+        });
+        document.getElementById('devicefilter').addEventListener('change', () => {
+            filtergames();
+        });
 
         loadmanifest();
     </script>
 </body>
-    </html>
+                        </html>
