@@ -160,6 +160,12 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
 
+        .featuredimage img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+        }
+
         .featuredinfo {
             flex: 1;
         }
@@ -218,6 +224,12 @@
             align-items: center;
             justify-content: center;
             font-size: 3rem;
+        }
+
+        .gamecardimage img {
+            max-width: 70%;
+            max-height: 70%;
+            object-fit: contain;
         }
 
         .gamecardinfo {
@@ -285,6 +297,15 @@
             display: flex;
             flex-direction: column;
             box-shadow: 0 25px 40px black;
+            transition: all 0.3s;
+        }
+
+        .modal.fullscreen {
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            max-height: 100%;
+            border-radius: 0;
         }
 
         .modalheader {
@@ -296,18 +317,31 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .closebtn {
+        .modaltitle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modalheaderbuttons {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .fullscreenbtn, .closebtn {
             background: none;
             border: none;
             color: var(--textprimary);
-            font-size: 2rem;
+            font-size: 1.5rem;
             cursor: pointer;
-            line-height: 1;
             transition: 0.2s;
+            padding: 0 6px;
         }
 
-        .closebtn:hover {
-            color: var(--danger);
+        .fullscreenbtn:hover, .closebtn:hover {
+            color: var(--accent);
+            transform: scale(1.05);
         }
 
         .modalbody {
@@ -382,10 +416,16 @@
     </main>
 
     <div id="gamemodal" class="modal">
-        <div class="modalcontent">
+        <div class="modalcontent" id="modalcontent">
             <div class="modalheader">
-                <h3 id="modalgamename"></h3>
-                <button id="closemodal" class="closebtn">&times;</button>
+                <div class="modaltitle">
+                    <i class="fas fa-gamepad"></i>
+                    <h3 id="modalgamename"></h3>
+                </div>
+                <div class="modalheaderbuttons">
+                    <button id="fullscreenbtn" class="fullscreenbtn" title="toggle fullscreen"><i class="fas fa-expand"></i></button>
+                    <button id="closemodal" class="closebtn">&times;</button>
+                </div>
             </div>
             <div class="modalbody">
                 <div id="loaderplace" class="loader"><i class="fas fa-spinner fa-pulse"></i><span>loading game...</span></div>
@@ -398,9 +438,9 @@
         let allgames = [];
         let filteredgames = [];
         let currentbaseurl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+        let isfullscreen = false;
 
         async function loadmanifest() {
-            const loadercontainer = document.getElementById('featuredgamediv');
             try {
                 const manifesturl = currentbaseurl + 'manifest.json';
                 const response = await fetch(manifesturl);
@@ -420,12 +460,20 @@
             }
         }
 
+        function rendericon(icon, sizeclass = '') {
+            if (!icon) return '<i class="fas fa-gamepad"></i>';
+            if (icon.match(/^https?:\/\//i) || icon.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
+                return `<img src="${escapehtml(icon)}" alt="icon" style="width:80%; height:80%; object-fit:contain;">`;
+            }
+            return `<span style="font-size:2.5rem;">${escapehtml(icon)}</span>`;
+        }
+
         function renderfeatured() {
             if (!allgames.length) return;
             const featured = allgames[0];
             const container = document.getElementById('featuredgamediv');
             container.innerHTML = `
-                <div class="featuredimage"><i class="fas fa-trophy"></i></div>
+                <div class="featuredimage">${rendericon(featured.icon)}</div>
                 <div class="featuredinfo">
                     <h3>${escapehtml(featured.name)}</h3>
                     <p>${escapehtml(featured.description)}</p>
@@ -451,12 +499,12 @@
                 card.className = 'gamecard';
                 card.onclick = () => playgame(game.id);
                 card.innerHTML = `
-                    <div class="gamecardimage"><i class="fas ${game.id === 'axidry2d' ? 'fa-circle' : 'fa-fist-raised'}"></i></div>
+                    <div class="gamecardimage">${rendericon(game.icon)}</div>
                     <div class="gamecardinfo">
                         <h4>${escapehtml(game.name)}</h4>
                         <p>${escapehtml(game.description.substring(0, 85))}...</p>
                         <div class="gamemeta">
-                            <span>${escapehtml(game.developer)}</span>
+                            <span><i class="fas fa-user-astronaut"></i> ${escapehtml(game.developer)}</span>
                             <div class="devicetags">${(game.devices || []).map(d => `<span class="devicetag">${escapehtml(d)}</span>`).join('')}</div>
                         </div>
                     </div>
@@ -534,15 +582,35 @@
             }
         }
 
+        function togglefullscreen() {
+            const modalcontent = document.getElementById('modalcontent');
+            const fullbtn = document.getElementById('fullscreenbtn');
+            if (!isfullscreen) {
+                modalcontent.classList.add('fullscreen');
+                fullbtn.innerHTML = '<i class="fas fa-compress"></i>';
+                isfullscreen = true;
+            } else {
+                modalcontent.classList.remove('fullscreen');
+                fullbtn.innerHTML = '<i class="fas fa-expand"></i>';
+                isfullscreen = false;
+            }
+        }
+
         function closemodal() {
             const modal = document.getElementById('gamemodal');
             const iframe = document.getElementById('gameframe');
             const loader = document.getElementById('loaderplace');
+            const modalcontent = document.getElementById('modalcontent');
             modal.classList.remove('active');
             iframe.srcdoc = '';
             iframe.style.display = 'none';
             loader.style.display = 'flex';
             loader.innerHTML = '<i class="fas fa-spinner fa-pulse"></i><span>loading game...</span>';
+            if (isfullscreen) {
+                modalcontent.classList.remove('fullscreen');
+                document.getElementById('fullscreenbtn').innerHTML = '<i class="fas fa-expand"></i>';
+                isfullscreen = false;
+            }
         }
 
         function escapehtml(str) {
@@ -552,8 +620,6 @@
                 if (m === '<') return '&lt;';
                 if (m === '>') return '&gt;';
                 return m;
-            }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-                return c;
             });
         }
 
@@ -565,6 +631,7 @@
         window.playgame = playgame;
 
         document.getElementById('closemodal').addEventListener('click', closemodal);
+        document.getElementById('fullscreenbtn').addEventListener('click', togglefullscreen);
         document.getElementById('gamemodal').addEventListener('click', (e) => {
             if (e.target.id === 'gamemodal') closemodal();
         });
@@ -579,4 +646,4 @@
         loadmanifest();
     </script>
 </body>
-</html>
+    </html>
