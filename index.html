@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axovvy Games</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bgprimary: #1a1a2e; --bgsecondary: #16213e; --bgcard: #0f3460; --textprimary: #ffffff; --textsecondary: #b8c5d6; --accent: #7c3aed; --accenthover: #6d28d9; --border: #2d3748; }
+        [data-theme="light"] { --bgprimary: #f7fafc; --bgsecondary: #edf2f7; --bgcard: #ffffff; --textprimary: #1a202c; --textsecondary: #4a5568; --accent: #7c3aed; --accenthover: #6d28d9; --border: #e2e8f0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bgprimary); color: var(--textprimary); min-height: 100vh; }
+        .navbar { background-color: var(--bgsecondary); padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.3); position: sticky; top: 0; z-index: 100; }
+        .navcontainer { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--accent); }
+        .searchbar input { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border); background-color: var(--bgprimary); color: var(--textprimary); width: 300px; }
+        .navcontrols { display: flex; gap: 1rem; align-items: center; }
+        .iconbtn { background: var(--bgcard); border: none; color: var(--textprimary); padding: 0.5rem; border-radius: 8px; cursor: pointer; font-size: 1.2rem; }
+        .iconbtn:hover { background: var(--accent); }
+        select { padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border); background-color: var(--bgprimary); color: var(--textprimary); cursor: pointer; }
+        .maincontent { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
+        .sectiontitle { font-size: 1.8rem; margin-bottom: 1.5rem; color: var(--textprimary); }
+        .featuredcard { background: linear-gradient(135deg, var(--bgcard), var(--bgsecondary)); border-radius: 16px; padding: 2rem; display: flex; gap: 2rem; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .featuredimage { width: 300px; height: 200px; background: var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+        .featuredinfo { flex: 1; }
+        .featuredinfo h3 { font-size: 2rem; margin-bottom: 1rem; }
+        .featuredinfo p { color: var(--textsecondary); margin-bottom: 1rem; line-height: 1.6; }
+        .playbtn { background: var(--accent); color: white; border: none; padding: 1rem 2rem; border-radius: 12px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s; }
+        .playbtn:hover { background: var(--accenthover); transform: translateY(-2px); }
+        .gamesgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .gamecard { background: var(--bgcard); border-radius: 12px; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; border: 1px solid var(--border); }
+        .gamecard:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
+        .gamecardimage { width: 100%; height: 180px; background: linear-gradient(135deg, var(--accent), var(--bgsecondary)); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+        .gamecardinfo { padding: 1.5rem; }
+        .gamecardinfo h4 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+        .gamecardinfo p { color: var(--textsecondary); font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.4; }
+        .gamemeta { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--textsecondary); }
+        .devicetags { display: flex; gap: 0.5rem; }
+        .devicetag { background: var(--bgsecondary); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.75rem; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modalcontent { background: var(--bgsecondary); width: 90%; height: 90%; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+        .modalheader { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background: var(--bgcard); }
+        .closebtn { background: none; border: none; color: var(--textprimary); font-size: 2rem; cursor: pointer; }
+        .modalbody { flex: 1; }
+        #gameframe { width: 100%; height: 100%; border: none; }
+        @media (max-width: 768px) { .featuredcard { flex-direction: column; } .featuredimage { width: 100%; } .searchbar input { width: 200px; } .gamesgrid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">        <div class="navcontainer">
+            <div class="logo"><span class="logotext">axovvy games</span></div>
+            <div class="searchbar"><input type="text" id="searchinput" placeholder="Search games..."></div>
+            <div class="navcontrols">
+                <button id="themebtn" class="iconbtn">🌙</button>
+                <select id="devicefilter">
+                    <option value="all">All Devices</option>
+                    <option value="pc">PC Only</option>
+                    <option value="mobile">Mobile & PC</option>
+                </select>
+            </div>
+        </div>
+    </nav>
+    <main class="maincontent">
+        <section class="featured">
+            <h2 class="sectiontitle">Featured Game</h2>
+            <div id="featuredgamediv" class="featuredcard"></div>
+        </section>
+        <section class="gameslist">
+            <h2 class="sectiontitle">All Games</h2>
+            <div id="gamesgrid" class="gamesgrid"></div>
+        </section>
+    </main>
+    <div id="gamemodal" class="modal">
+        <div class="modalcontent">
+            <div class="modalheader">
+                <h3 id="modalgamename"></h3>
+                <button id="closemodal" class="closebtn">×</button>
+            </div>
+            <div class="modalbody">
+                <iframe id="gameframe" src="" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+    <script>
+        let allgames = [];
+        let filteredgames = [];
+        let currenttheme = 'dark';
+        
+        async function loadmanifest() {
+            try {
+                const response = await fetch('manifest.json');
+                const data = await response.json();
+                allgames = data.games;
+                filteredgames = [...allgames];
+                renderfeatured();
+                rendergames();
+            } catch (error) {
+                console.error('Error loading manifest:', error);
+            }        }
+        
+        function renderfeatured() {
+            if (allgames.length === 0) return;
+            const featuredgame = allgames[0];
+            const featuredd div = document.getElementById('featuredgamediv');
+            featuredd div.innerHTML = `
+                <div class="featuredimage">🎮</div>
+                <div class="featuredinfo">
+                    <h3>${featuredgame.name}</h3>
+                    <p>${featuredgame.description}</p>
+                    <div class="gamemeta">
+                        <span>By ${featuredgame.developer}</span>
+                        <span>${featuredgame.technology}</span>
+                        <div class="devicetags">
+                            ${featuredgame.devices.map(d => `<span class="devicetag">${d}</span>`).join('')}
+                        </div>
+                    </div>
+                    <button class="playbtn" onclick="playgame('${featuredgame.id}')">▶ Play Now</button>
+                </div>
+            `;
+        }
+        
+        function rendergames() {
+            const gamesgrid = document.getElementById('gamesgrid');
+            gamesgrid.innerHTML = '';
+            filteredgames.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'gamecard';
+                card.onclick = () => playgame(game.id);
+                card.innerHTML = `
+                    <div class="gamecardimage">🎮</div>
+                    <div class="gamecardinfo">
+                        <h4>${game.name}</h4>
+                        <p>${game.description.substring(0, 100)}...</p>
+                        <div class="gamemeta">
+                            <span>By ${game.developer}</span>
+                            <span>⭐ ${game.rating}</span>
+                            <div class="devicetags">
+                                ${game.devices.map(d => `<span class="devicetag">${d}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                gamesgrid.appendChild(card);
+            });
+        }
+        
+        function playgame(gameid) {
+            const game = allgames.find(g => g.id === gameid);            if (!game) return;
+            const modal = document.getElementById('gamemodal');
+            const modalname = document.getElementById('modalgamename');
+            const gameframe = document.getElementById('gameframe');
+            modalname.textContent = game.name;
+            gameframe.src = `https://raw.githubusercontent.com/axovvygames/games/main/${game.folder}/${game.mainfile}`;
+            modal.classList.add('active');
+        }
+        
+        function closemodal() {
+            const modal = document.getElementById('gamemodal');
+            const gameframe = document.getElementById('gameframe');
+            modal.classList.remove('active');
+            gameframe.src = '';
+        }
+        
+        function toggletheme() {
+            currenttheme = currenttheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currenttheme);
+            document.getElementById('themebtn').textContent = currenttheme === 'dark' ? '🌙' : '☀️';
+        }
+        
+        function filtergames() {
+            const searchterm = document.getElementById('searchinput').value.toLowerCase();
+            const devicefilter = document.getElementById('devicefilter').value;
+            filteredgames = allgames.filter(game => {
+                const matchessearch = game.name.toLowerCase().includes(searchterm) || 
+                                    game.description.toLowerCase().includes(searchterm);
+                let matchesdevice = true;
+                if (devicefilter === 'pc') matchesdevice = game.devices.includes('pc') && !game.devices.includes('mobile');
+                else if (devicefilter === 'mobile') matchesdevice = game.devices.includes('mobile');
+                return matchessearch && matchesdevice;
+            });
+            rendergames();
+        }
+        
+        document.getElementById('searchinput').addEventListener('input', filtergames);
+        document.getElementById('devicefilter').addEventListener('change', filtergames);
+        document.getElementById('themebtn').addEventListener('click', toggletheme);
+        document.getElementById('closemodal').addEventListener('click', closemodal);
+        document.getElementById('gamemodal').addEventListener('click', (e) => {
+            if (e.target.id === 'gamemodal') closemodal();
+        });
+        
+        loadmanifest();
+    </script>
+</body>
+  </html>
