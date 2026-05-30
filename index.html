@@ -133,7 +133,7 @@
                         <p>${game.description.substring(0, 100)}...</p>
                         <div class="gamemeta">
                             <span>By ${game.developer}</span>
-                            <span>⭐ ${game.rating}</span>
+                            <span>${game.technology}</span>
                             <div class="devicetags">
                                 ${game.devices.map(d => `<span class="devicetag">${d}</span>`).join('')}
                             </div>
@@ -192,4 +192,4 @@
         loadmanifest();
     </script>
 </body>
-  </html>
+</html>
