@@ -2,29 +2,29 @@
   "games": [
     {
       "id": "axidry2d",
-      "name": "Axidry 2D",
-      "description": "a 2D challenging game to claim points by moving your 2D circle into coins/points.",
-      "developer": "Axom",
-      "technology": "HTML5",
+      "name": "axidry 2d",
+      "description": "a challenging 2d game: steer your circle into glowing coins. each coin gives points.",
+      "developer": "axom",
+      "technology": "html5",
       "devices": ["pc", "mobile"],
       "folder": "axidry2d",
       "mainfile": "index.html",
-      "released": "May 1 2026",
-      "lastupdated": "May 1 2026",
-      "tags": ["challenging", "2d", "vs", "hard", "coins"]
+      "released": "may 1 2026",
+      "lastupdated": "may 1 2026",
+      "tags": ["challenging", "2d", "coins"]
     },
     {
       "id": "axomfighter2d",
-      "name": "Axom 2D fighters",
-      "description": "a 2D fighting game against a pro bot.",
-      "developer": "Axom",
-      "technology": "HTML5",
+      "name": "axom 2d fighters",
+      "description": "a 2d fighting game against a pro bot. punch and dodge, manage your health.",
+      "developer": "axom",
+      "technology": "html5",
       "devices": ["pc", "mobile"],
       "folder": "axomfighter2d",
       "mainfile": "index.html",
-      "released": "May 30 2026",
-      "lastupdated": "May 30 2026",
-      "tags": ["2d", "fighting", "fighter", "boxing"]
+      "released": "may 30 2026",
+      "lastupdated": "may 30 2026",
+      "tags": ["2d", "fighting", "boxing"]
     }
   ]
 }
