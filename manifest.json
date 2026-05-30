@@ -9,6 +9,7 @@
       "devices": ["pc", "mobile"],
       "folder": "axidry2d",
       "mainfile": "index.html",
+      "icon": "✨",
       "released": "may 1 2026",
       "lastupdated": "may 1 2026",
       "tags": ["challenging", "2d", "coins"]
@@ -22,6 +23,7 @@
       "devices": ["pc", "mobile"],
       "folder": "axomfighter2d",
       "mainfile": "index.html",
+      "icon": "🥊",
       "released": "may 30 2026",
       "lastupdated": "may 30 2026",
       "tags": ["2d", "fighting", "boxing"]
