@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>axomfight</title>
+    <style>
+        * {
+            user-select: none;
+            touch-action: manipulation;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a15 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .gamecontainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            height: auto;
+            max-width: 1200px;
+            aspect-ratio: 1000 / 600;
+            box-shadow: 0 0 0 3px #ffffff44, 0 0 0 6px #ffffff22;
+            border-radius: 16px;
+            background: #0f0f1a;
+        }
+
+        .menupanel, .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 20;
+            font-family: monospace;
+        }
+
+        .menubox, .overlaybox {
+            background: #111;
+            border: 2px solid #ffffffcc;
+            padding: 28px 32px;
+            text-align: center;
+            max-width: 380px;
+            width: 80%;
+            box-shadow: 0 0 20px #ffffff66;
+        }
+
+        .menubox h1 {
+            color: #ffffff;
+            font-size: 42px;
+            letter-spacing: 4px;
+            margin: 0 0 24px 0;
+            text-shadow: 2px 2px 0 #888;
+        }
+
+        button {
+            background: #2a2a2a;
+            border: 2px solid #ffffff;
+            color: #ffffff;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 20px;
+            padding: 8px 20px;
+            margin: 10px;
+            width: 180px;
+            cursor: pointer;
+            transition: 0.1s linear;
+            border-radius: 8px;
+        }
+
+        button:active {
+            transform: scale(0.96);
+            background: #ffffff;
+            color: #000;
+        }
+
+        .settingrow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            color: #ffffff;
+            font-size: 18px;
+        }
+
+        .togglebtn {
+            width: 100px;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .controlgrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            text-align: left;
+            color: #dddddd;
+            font-size: 14px;
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .touchcontrols {
+            position: fixed;
+            bottom: 15px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15px;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .dpad {
+            display: flex;
+            gap: 12px;
+            background: transparent;
+            pointer-events: auto;
+        }
+
+        .actionbtns {
+            display: flex;
+            gap: 10px;
+            background: transparent;
+            pointer-events: auto;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .touchbtn {
+            background: #222222cc;
+            backdrop-filter: blur(4px);
+            border: 2px solid #ffffff;
+            color: #ffffff;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 18px;
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            text-align: center;
+            line-height: 52px;
+            touch-action: none;
+            cursor: pointer;
+            box-shadow: 0 2px 6px black;
+        }
+
+        .touchbtn:active {
+            transform: translateY(2px);
+            background: #ffffff;
+            color: black;
+        }
+
+        @media (max-width: 700px) {
+            .touchbtn { width: 48px; height: 48px; font-size: 14px; line-height: 44px; }
+            .dpad, .actionbtns { gap: 8px; }
+        }
+
+        .hidemenus {
+            display: none;
+        }
+        
+        .cooldown-indicator {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            background: #000000aa;
+            color: white;
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 8px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 35;
+        }
+    </style>
+</head>
+<body>
+<div class="gamecontainer">
+    <canvas id="gamecanvas" width="1000" height="600"></canvas>
+</div>
+
+<div id="mainmenu" class="menupanel">
+    <div class="menubox">
+        <h1>AXOMFIGHT</h1>
+        <button id="startbtn">START GAME</button>
+        <button id="controlbtn">CONTROLS</button>
+        <button id="settingbtn">SETTINGS</button>
+    </div>
+</div>
+
+<div id="controlspanel" class="menupanel hidemenus">
+    <div class="menubox">
+        <h2 style="color:#ffffff;">CONTROLS</h2>
+        <div class="controlgrid">
+            <div><strong>PC (P1)</strong><br>WASD | F(punch) G(heavy) H(block)<br>Crouch+Light = low kick | R = LASER<br>E = SPIN PUNCH</div>
+            <div><strong>MOBILE</strong><br>Left/right + jump/crouch on right<br>Action buttons: Punch, Heavy, Block, Laser, Spin</div>
+            <div><strong>LASER</strong><br>10s cooldown, shoots projectile, 20 dmg</div>
+            <div><strong>BLOCK</strong><br>Shield appears in front facing direction</div>
+        </div>
+        <button id="backfromctrl">BACK</button>
+    </div>
+</div>
+
+<div id="settingspanel" class="menupanel hidemenus">
+    <div class="menubox">
+        <h2 style="color:#ffffff;">SETTINGS</h2>
+        <div class="settingrow">
+            <span>SOUND FX</span>
+            <button id="soundtoggle" class="togglebtn">ON</button>
+        </div>
+        <div class="settingrow">
+            <span>DIFFICULTY</span>
+            <button id="difficultybtn" class="togglebtn">NORMAL</button>
+        </div>
+        <div class="settingrow">
+            <span>WIN/LOSS</span>
+            <span id="winstats">W:0 L:0</span>
+        </div>
+        <button id="backfromset">BACK</button>
+    </div>
+</div>
+
+<div id="gameoverlay" class="menupanel hidemenus">
+    <div class="menubox">
+        <h2 id="matchresult" style="color:#ff6666;">KO!</h2>
+        <button id="restartmatch">RESTART FIGHT</button>
+        <button id="menureturn">MAIN MENU</button>
+    </div>
+</div>
+
+<div class="touchcontrols" id="touchui">
+    <div class="dpad">
+        <div class="touchbtn" data-touch="left">◀</div>
+        <div class="touchbtn" data-touch="right">▶</div>
+    </div>
+    <div class="actionbtns">
+        <div class="touchbtn" data-touch="jump">JUMP</div>
+        <div class="touchbtn" data-touch="crouch">CROUCH</div>
+        <div class="touchbtn" data-touch="light">PUNCH</div>
+        <div class="touchbtn" data-touch="heavy">HEAVY</div>
+        <div class="touchbtn" data-touch="block">BLOCK</div>
+        <div class="touchbtn" data-touch="laser">LASER</div>
+        <div class="touchbtn" data-touch="spin">SPIN</div>
+    </div>
+</div>
+<div id="lasercooldownui" class="cooldown-indicator">LASER READY</div>
+
+<script>
+    (function(){
+        let canvas = document.getElementById('gamecanvas');
+        let ctx = canvas.getContext('2d');
+        
+        let gameactive = false;
+        let gamestate = 'menu';
+        let matchtimer = 60;
+        let timercounter = 0;
+        let shakescreen = 0;
+        let particles = [];
+        let projectiles = [];
+
+        let p1 = {
+            x:180, y:0, vx:0, vy:0, width:32, height:64, facing:1,
+            health:100, maxhp:100, state:'idle', statetimer:0, attacktimer:0,
+            canattack:true, blockactive:false, hurtinv:0, crouch:false, ground:true,
+            lasercooldown:0
+        };
+        let p2 = {
+            x:780, y:0, vx:0, vy:0, width:32, height:64, facing:-1,
+            health:100, maxhp:100, state:'idle', statetimer:0, attacktimer:0,
+            canattack:true, blockactive:false, hurtinv:0, crouch:false, ground:true,
+            lasercooldown:0
+        };
+
+        let groundlevel = 536;
+        let gravity = 0.8;
+        let friction = 0.92;
+        let inputs = {
+            p1left:false, p1right:false, p1jump:false, p1crouch:false, p1light:false, p1heavy:false, p1block:false, p1laser:false, p1spin:false
+        };
+        let touchflags = {left:false,right:false,jump:false,crouch:false,light:false,heavy:false,block:false,laser:false,spin:false};
+
+        let aienabled = true;
+        let soundenabled = true;
+        let difficulty = 1;
+        let winloss = {wins:0, losses:0};
+
+        function loadstats(){
+            try{
+                let saved = localStorage.getItem('axomfightstats');
+                if(saved){
+                    let data = JSON.parse(saved);
+                    winloss.wins = data.wins || 0;
+                    winloss.losses = data.losses || 0;
+                }
+            }catch(e){}
+            updatestatsdisplay();
+        }
+        function savestats(){
+            localStorage.setItem('axomfightstats', JSON.stringify({wins:winloss.wins, losses:winloss.losses}));
+            updatestatsdisplay();
+        }
+        function updatestatsdisplay(){
+            let wspan = document.getElementById('winstats');
+            if(wspan) wspan.innerText = `W:${winloss.wins} L:${winloss.losses}`;
+        }
+
+        function resetmatch(){
+            p1 = {
+                x:180, y:0, vx:0, vy:0, width:32, height:64, facing:1,
+                health:100, maxhp:100, state:'idle', statetimer:0, attacktimer:0,
+                canattack:true, blockactive:false, hurtinv:0, crouch:false, ground:true,
+                lasercooldown:0
+            };
+            p2 = {
+                x:780, y:0, vx:0, vy:0, width:32, height:64, facing:-1,
+                health:100, maxhp:100, state:'idle', statetimer:0, attacktimer:0,
+                canattack:true, blockactive:false, hurtinv:0, crouch:false, ground:true,
+                lasercooldown:0
+            };
+            p1.y = groundlevel - p1.height;
+            p2.y = groundlevel - p2.height;
+            p1.x = Math.max(40, p1.x); p2.x = Math.min(960-p2.width, p2.x);
+            matchtimer = 60;
+            timercounter = 0;
+            particles = [];
+            projectiles = [];
+            shakescreen = 0;
+            gameactive = true;
+            if(gamestate === 'active') gamestate = 'active';
+        }
+
+        function applygravity(player){
+            player.vy += gravity;
+            player.y += player.vy;
+            if(player.y + player.height >= groundlevel){
+                player.y = groundlevel - player.height;
+                player.vy = 0;
+                player.ground = true;
+            } else {
+                player.ground = false;
+            }
+            if(player.y < 0){ player.y = 0; if(player.vy<0) player.vy=0; }
+        }
+
+        function handleinput(player, isp1){
+            if(!isp1) return;
+            let left = inputs.p1left || touchflags.left;
+            let right = inputs.p1right || touchflags.right;
+            let crouch = inputs.p1crouch || touchflags.crouch;
+            let jump = inputs.p1jump || touchflags.jump;
+            let light = inputs.p1light || touchflags.light;
+            let heavy = inputs.p1heavy || touchflags.heavy;
+            let block = inputs.p1block || touchflags.block;
+            let laser = inputs.p1laser || touchflags.laser;
+            let spin = inputs.p1spin || touchflags.spin;
+
+            if(player.hurtinv > 0) return;
+            if(player.state === 'hit') return;
+            if(player.state === 'attacklight' || player.state === 'attackheavy' || player.state === 'attacklow' || player.state === 'laserattack' || player.state === 'spinattack'){
+                if(player.attacktimer > 0) return;
+            }
+            if(block && player.ground && player.state !== 'attacklight' && player.state !== 'attackheavy' && player.state !== 'attacklow' && player.state !== 'laserattack' && player.state !== 'spinattack' && player.state !== 'hit'){
+                player.state = 'block';
+                player.blockactive = true;
+                player.statetimer = 6;
+            } else if(player.state !== 'block') {
+                player.blockactive = false;
+            }
+            if(player.state === 'block' && player.statetimer <=0){
+                player.state = 'idle';
+                player.blockactive = false;
+            }
+            if(player.state !== 'idle' && player.state !== 'walk' && player.state !== 'jump' && player.state !== 'crouch' && player.state !== 'block') return;
+            if(crouch && player.ground && player.state !== 'crouch'){
+                player.state = 'crouch';
+                player.crouch = true;
+                player.height = 48;
+                player.y = groundlevel - player.height;
+                return;
+            } else if(!crouch && player.crouch){
+                player.crouch = false;
+                player.height = 64;
+                player.y = groundlevel - player.height;
+                if(player.state==='crouch') player.state='idle';
+            }
+            if(jump && player.ground && !player.crouch){
+                player.vy = -10.5;
+                player.ground = false;
+                player.state = 'jump';
+                return;
+            }
+            let move = 0;
+            if(left) move = -5.2;
+            if(right) move = 5.2;
+            player.vx = move;
+            if(move !== 0 && player.ground && !player.crouch && player.state !=='jump'){
+                player.state = 'walk';
+                player.facing = move>0 ? 1 : -1;
+            } else if(move === 0 && player.ground && !player.crouch && player.state !=='jump'){
+                player.state = 'idle';
+            }
+            if(light && player.canattack && player.ground){
+                if(player.crouch){
+                    player.state = 'attacklow';
+                    player.statetimer = 12;
+                    player.attacktimer = 8;
+                    player.canattack = false;
+                    setTimeout(()=>{ if(player) player.canattack = true; }, 450);
+                } else {
+                    player.state = 'attacklight';
+                    player.statetimer = 10;
+                    player.attacktimer = 6;
+                    player.canattack = false;
+                    setTimeout(()=>{ if(player) player.canattack = true; }, 350);
+                }
+            }
+            if(heavy && player.canattack && player.ground && !player.crouch){
+                player.state = 'attackheavy';
+                player.statetimer = 16;
+                player.attacktimer = 10;
+                player.canattack = false;
+                setTimeout(()=>{ if(player) player.canattack = true; }, 500);
+            }
+            if(laser && player.lasercooldown <= 0 && player.canattack && player.ground){
+                player.state = 'laserattack';
+                player.statetimer = 20;
+                player.attacktimer = 14;
+                player.lasercooldown = 600;
+                player.canattack = false;
+                setTimeout(()=>{ if(player) player.canattack = true; }, 600);
+                let proj = {
+                    x: player.x + (player.facing===1 ? player.width : 0),
+                    y: player.y + 32,
+                    vx: player.facing===1 ? 12 : -12,
+                    vy: 0,
+                    life: 60,
+                    owner: 1,
+                    damage: 20
+                };
+                if(player.facing===1) proj.x = player.x + player.width - 8;
+                else proj.x = player.x - 8;
+                projectiles.push(proj);
+                addparticle(proj.x, proj.y, 12, '#ff44ff');
+            }
+            if(spin && player.canattack && player.ground){
+                player.state = 'spinattack';
+                player.statetimer = 18;
+                player.attacktimer = 12;
+                player.canattack = false;
+                setTimeout(()=>{ if(player) player.canattack = true; }, 550);
+            }
+            if(player.lasercooldown > 0) player.lasercooldown--;
+        }
+
+        function updateai(){
+            if(!aienabled) return;
+            let ai = p2;
+            let target = p1;
+            let dist = target.x - ai.x;
+            let reaction = 0.018 * (difficulty === 0 ? 0.7 : difficulty === 1 ? 1 : 1.4);
+            if(ai.hurtinv > 0 || ai.state === 'hit') return;
+            ai.facing = (ai.x < target.x) ? 1 : -1;
+            let moveTowards = 0;
+            if(Math.abs(dist) > 45) {
+                if(dist < 0) moveTowards = -1;
+                else moveTowards = 1;
+            }
+            if(moveTowards === 1) ai.vx = 5.0;
+            else if(moveTowards === -1) ai.vx = -5.0;
+            else ai.vx *= 0.9;
+            if(ai.ground){
+                if(Math.abs(dist) < 70){
+                    if(Math.random()<0.022 && ai.lasercooldown <=0) { ai.state = 'laserattack'; ai.attacktimer=14; ai.statetimer=20; ai.lasercooldown=600; let proj={x:ai.x+(ai.facing===1?ai.width:-8), y:ai.y+32, vx:ai.facing===1?12:-12, vy:0, life:60, owner:2, damage:20}; projectiles.push(proj); addparticle(proj.x,proj.y,12,'#ff44ff');}
+                    else if(Math.random()<0.025) { ai.state = 'spinattack'; ai.attacktimer=12; ai.statetimer=18; }
+                    else if(Math.random()<0.032){
+                        if(target.crouch || Math.random()<0.5) { ai.crouch=true; ai.height=48; ai.y=groundlevel-48; ai.state='crouch'; setTimeout(()=>{ if(ai.crouch){ ai.crouch=false; ai.height=64; ai.y=groundlevel-64; if(ai.state==='crouch') ai.state='idle'; } }, 300); ai.state='attacklow'; ai.attacktimer=8; ai.statetimer=12; }
+                        else { ai.state = 'attacklight'; ai.attacktimer=6; ai.statetimer=10; }
+                        ai.canattack=false; setTimeout(()=>{ if(ai) ai.canattack=true; }, 400);
+                    } else if(Math.random()<0.02){ ai.state = 'attackheavy'; ai.attacktimer=10; ai.statetimer=16; ai.canattack=false; setTimeout(()=>{ if(ai) ai.canattack=true; }, 500);}
+                }
+                if(target.state === 'attacklight' || target.state === 'attackheavy' || target.state === 'attacklow' || target.state === 'laserattack'){
+                    if(Math.abs(dist) < 100) { ai.state = 'block'; ai.blockactive=true; ai.statetimer=6; }
+                }
+                if(target.ground && target.y < groundlevel-20 && Math.random()<0.02 && Math.abs(dist)<80) { ai.vy = -10.5; ai.ground=false; ai.state='jump'; }
+            }
+            if(ai.lasercooldown>0) ai.lasercooldown--;
+        }
+
+        function updateplayer(player, isp1){
+            if(!gameactive) return;
+            if(player.hurtinv > 0) player.hurtinv--;
+            if(player.statetimer > 0) player.statetimer--;
+            if(player.attacktimer > 0) player.attacktimer--;
+            if(isp1) handleinput(player, true);
+            if(player.state !== 'attacklight' && player.state !== 'attackheavy' && player.state !== 'attacklow' && player.state !== 'laserattack' && player.state !== 'spinattack'){
+                applygravity(player);
+                if(!isp1 && aienabled && player.ground) {} 
+                else { player.x += player.vx; }
+                if(player.x < 20) player.x = 20;
+                if(player.x + player.width > 980) player.x = 980 - player.width;
+                if(player.vx !==0 && !isp1 && aienabled) player.vx *= friction;
+                else if(player.vx !==0) player.vx *= friction;
+            } else {
+                if(player.attacktimer <=0 && player.statetimer<=0){
+                    player.state = 'idle';
+                }
+            }
+            if(player.state === 'hit' && player.statetimer <=0) player.state = 'idle';
+            if(player.state === 'attacklight' && player.statetimer<=0) player.state='idle';
+            if(player.state === 'attackheavy' && player.statetimer<=0) player.state='idle';
+            if(player.state === 'attacklow' && player.statetimer<=0) player.state='idle';
+            if(player.state === 'laserattack' && player.statetimer<=0) player.state='idle';
+            if(player.state === 'spinattack' && player.statetimer<=0) player.state='idle';
+            if(player.state === 'jump' && player.ground) player.state='idle';
+            if(player.state === 'crouch' && player.statetimer>0 && !inputs.p1crouch && !touchflags.crouch && isp1) { player.crouch=false; player.height=64; player.y=groundlevel-64; player.state='idle'; }
+        }
+
+        function updateprojectiles(){
+            for(let i=0;i<projectiles.length;i++){
+                let p = projectiles[i];
+                p.x += p.vx;
+                p.life--;
+                let target = (p.owner === 1) ? p2 : p1;
+                let rect = {x:target.x, y:target.y, w:target.width, h:target.height};
+                if(p.x+6 > rect.x && p.x < rect.x+rect.w && p.y+4 > rect.y && p.y < rect.y+rect.h){
+                    let finaldmg = p.damage;
+                    if(target.blockactive) finaldmg = Math.floor(p.damage*0.5);
+                    target.health = Math.max(0, target.health - finaldmg);
+                    target.hurtinv = 12;
+                    target.statetimer = 8;
+                    target.state = 'hit';
+                    shakescreen = 8;
+                    addparticle(target.x+16, target.y+32, 15, '#ff88ff');
+                    projectiles.splice(i,1);
+                    i--;
+                } else if(p.life <=0 || p.x < -50 || p.x > 1050){
+                    projectiles.splice(i,1);
+                    i--;
+                }
+            }
+        }
+
+        function checkattack(attacker, defender, damage, isheavy, islow, isspin){
+            if(attacker.attacktimer > 0 && (attacker.state === 'attacklight' || attacker.state === 'attackheavy' || attacker.state === 'attacklow' || attacker.state === 'spinattack')){
+                let rect2 = {x:defender.x, y:defender.y, w:defender.width, h:defender.height};
+                let attackbox = {x:attacker.x + (attacker.facing===1?attacker.width-10:-22), y:attacker.y, w:38, h:attacker.height};
+                if(islow){
+                    attackbox.y = attacker.y + (attacker.crouch?16:40);
+                    attackbox.h = 18;
+                }
+                if(isspin){
+                    attackbox.x = attacker.x - 28;
+                    attackbox.w = attacker.width+56;
+                    attackbox.h = attacker.height;
+                }
+                if(attackbox.x < rect2.x+rect2.w && attackbox.x+attackbox.w > rect2.x &&
+                   attackbox.y < rect2.y+rect2.h && attackbox.y+attackbox.h > rect2.y){
+                    let finaldamage = damage;
+                    if(defender.blockactive){
+                        finaldamage = Math.floor(damage*0.5);
+                        addparticle(defender.x+16, defender.y+32, 6, '#aaaaff');
+                    } else {
+                        if(isheavy || isspin) shakescreen = 10;
+                        addparticle(defender.x+16, defender.y+(islow?44:28), 10, isspin ? '#ffaa44' : (isheavy?'#ff4444':'#ffaa66'));
+                    }
+                    defender.health = Math.max(0, defender.health - finaldamage);
+                    defender.hurtinv = 14;
+                    defender.statetimer = 10;
+                    defender.state = 'hit';
+                    defender.vx = (defender.x < attacker.x ? -5 : 5);
+                    attacker.attacktimer = 0;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function addparticle(x,y,count,color){
+            for(let i=0;i<count;i++){
+                particles.push({x:x+ (Math.random()*16-8), y:y+ (Math.random()*16-8), vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4-1, life:14, color:color});
+            }
+        }
+
+        function updategamelogic(){
+            if(!gameactive) return;
+            updateplayer(p1, true);
+            updateplayer(p2, false);
+            if(aienabled) updateai();
+            checkattack(p1, p2, 8, false, false, false);
+            checkattack(p1, p2, 16, true, false, false);
+            checkattack(p1, p2, 7, false, true, false);
+            checkattack(p1, p2, 14, false, false, true);
+            checkattack(p2, p1, 8, false, false, false);
+            checkattack(p2, p1, 16, true, false, false);
+            checkattack(p2, p1, 7, false, true, false);
+            checkattack(p2, p1, 14, false, false, true);
+            updateprojectiles();
+            
+            if(matchtimer > 0 && gameactive){
+                if(timercounter >= 60){
+                    matchtimer--;
+                    timercounter=0;
+                }
+                timercounter++;
+            }
+            if(matchtimer <= 0 && gameactive){
+                gameactive = false;
+                let winner = (p1.health > p2.health) ? 1 : (p2.health > p1.health) ? 2 : 0;
+                if(winner === 1) winloss.wins++;
+                else if(winner === 2) winloss.losses++;
+                savestats();
+                showgameover(winner);
+            }
+            if(p1.health <= 0 && gameactive){
+                gameactive = false;
+                winloss.losses++;
+                savestats();
+                showgameover(2);
+            }
+            if(p2.health <= 0 && gameactive){
+                gameactive = false;
+                winloss.wins++;
+                savestats();
+                showgameover(1);
+            }
+            for(let i=0;i<particles.length;i++){
+                particles[i].x += particles[i].vx;
+                particles[i].y += particles[i].vy;
+                particles[i].vy += 0.2;
+                particles[i].life--;
+                if(particles[i].life<=0) particles.splice(i,1), i--;
+            }
+            if(shakescreen>0) shakescreen--;
+            let p1cd = Math.ceil(p1.lasercooldown/60);
+            document.getElementById('lasercooldownui').innerHTML = `LASER: ${p1cd>0?p1cd+'s':'READY'}`;
+        }
+
+        function drawcharacter(player, isred){
+            let x = player.x, y = player.y;
+            let bodycolor = isred ? '#d64531' : '#3a7ca5';
+            let dark = isred ? '#a02020' : '#1e4d6b';
+            let skin = '#f5d0a9';
+            ctx.save();
+            if(player.facing === -1){
+                ctx.translate(x+player.width, y);
+                ctx.scale(-1,1);
+                ctx.translate(-player.width,0);
+            } else {
+                ctx.translate(x, y);
+            }
+            ctx.beginPath();
+            ctx.roundRect(6, 20, 20, 38, 6);
+            ctx.fillStyle = bodycolor;
+            ctx.fill();
+            ctx.fillStyle = dark;
+            ctx.fillRect(10, 48, 12, 12);
+            ctx.beginPath();
+            ctx.arc(16, 18, 10, 0, Math.PI*2);
+            ctx.fillStyle = skin;
+            ctx.fill();
+            ctx.fillStyle = '#222';
+            ctx.fillRect(12, 15, 3, 4);
+            ctx.fillRect(21, 15, 3, 4);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(15, 22, 2, 3);
+            if(player.state === 'attacklight'){
+                ctx.fillStyle = '#ffaa66';
+                ctx.fillRect(22, 28, 16, 7);
+            } else if(player.state === 'attackheavy'){
+                ctx.fillStyle = '#ff6633';
+                ctx.fillRect(22, 26, 20, 9);
+            } else if(player.state === 'attacklow'){
+                ctx.fillStyle = '#dd8844';
+                ctx.fillRect(18, 50, 18, 7);
+            } else if(player.state === 'laserattack'){
+                ctx.fillStyle = '#ff44ff';
+                ctx.fillRect(24, 30, 32, 8);
+                for(let i=0;i<3;i++) ctx.fillRect(28+i*8, 28, 4, 12);
+            } else if(player.state === 'spinattack'){
+                ctx.fillStyle = '#ffaa44';
+                ctx.beginPath();
+                ctx.arc(16, 38, 16, 0, Math.PI*2);
+                ctx.fill();
+            }
+            if(player.blockactive){
+                let shieldx = player.facing === 1 ? 26 : -8;
+                ctx.fillStyle = '#88aaffcc';
+                ctx.fillRect(shieldx, 20, 18, 32);
+                ctx.fillStyle = '#ffffffcc';
+                ctx.fillRect(shieldx+4, 24, 10, 24);
+            }
+            ctx.restore();
+        }
+
+        function draw(){
+            ctx.clearRect(0,0,1000,600);
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0,0,1000,600);
+            for(let i=0;i<300;i++){
+                ctx.fillStyle = `rgba(255,200,150,${Math.sin(Date.now()*0.002+i)*0.2+0.1})`;
+                ctx.fillRect( (i*97)%1000, (i*211)%600, 1,1);
+            }
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, groundlevel-8, 1000, 28);
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(0, groundlevel-4, 1000, 6);
+            drawcharacter(p1, true);
+            drawcharacter(p2, false);
+            for(let p of projectiles){
+                ctx.fillStyle = '#ff88ff';
+                ctx.fillRect(p.x, p.y, 8, 6);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(p.x+2, p.y+1, 4, 4);
+            }
+            for(let p of particles){
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 4, 4);
+            }
+            ctx.fillStyle = '#ff4444';
+            ctx.fillRect(70, 25, 320, 22);
+            ctx.fillStyle = '#44ff44';
+            ctx.fillRect(70, 25, (p1.health/100)*320, 22);
+            ctx.fillStyle = '#ff4444';
+            ctx.fillRect(610, 25, 320, 22);
+            ctx.fillStyle = '#44ff44';
+            ctx.fillRect(610, 25, (p2.health/100)*320, 22);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 30px monospace';
+            ctx.fillText(`${Math.floor(matchtimer)}`, 480, 48);
+            ctx.font = '18px monospace';
+            ctx.fillStyle = '#ccccff';
+            ctx.fillText("ROUND 1", 460, 88);
+            if(shakescreen>0){
+                let offx = (Math.random()*8-4);
+                let offy = (Math.random()*8-4);
+                ctx.translate(offx,offy);
+            }
+        }
+
+        function showgameover(winner){
+            let overlaydiv = document.getElementById('gameoverlay');
+            let resultspan = document.getElementById('matchresult');
+            if(winner===1) resultspan.innerText = "YOU WIN! KO!";
+            else if(winner===2) resultspan.innerText = "YOU LOSE! KO!";
+            else resultspan.innerText = "TIME OVER!";
+            overlaydiv.classList.remove('hidemenus');
+            gamestate = 'gameover';
+            gameactive = false;
+        }
+
+        function startmatch(){
+            resetmatch();
+            gamestate = 'active';
+            gameactive = true;
+            document.getElementById('mainmenu').classList.add('hidemenus');
+            document.getElementById('controlspanel').classList.add('hidemenus');
+            document.getElementById('settingspanel').classList.add('hidemenus');
+            document.getElementById('gameoverlay').classList.add('hidemenus');
+        }
+
+        function loop(){
+            if(gamestate === 'active'){
+                updategamelogic();
+            }
+            if(shakescreen>0){ ctx.save(); }
+            draw();
+            if(shakescreen>0){ ctx.restore(); }
+            requestAnimationFrame(loop);
+        }
+
+        function initbuttons(){
+            document.getElementById('startbtn').onclick = ()=>{ startmatch(); };
+            document.getElementById('controlbtn').onclick = ()=>{ document.getElementById('mainmenu').classList.add('hidemenus'); document.getElementById('controlspanel').classList.remove('hidemenus'); };
+            document.getElementById('settingbtn').onclick = ()=>{ document.getElementById('mainmenu').classList.add('hidemenus'); document.getElementById('settingspanel').classList.remove('hidemenus'); };
+            document.getElementById('backfromctrl').onclick = ()=>{ document.getElementById('controlspanel').classList.add('hidemenus'); document.getElementById('mainmenu').classList.remove('hidemenus'); };
+            document.getElementById('backfromset').onclick = ()=>{ document.getElementById('settingspanel').classList.add('hidemenus'); document.getElementById('mainmenu').classList.remove('hidemenus'); };
+            document.getElementById('restartmatch').onclick = ()=>{ document.getElementById('gameoverlay').classList.add('hidemenus'); startmatch(); };
+            document.getElementById('menureturn').onclick = ()=>{ document.getElementById('gameoverlay').classList.add('hidemenus'); document.getElementById('mainmenu').classList.remove('hidemenus'); gamestate='menu'; gameactive=false; };
+            let soundbtn = document.getElementById('soundtoggle');
+            let diffbtn = document.getElementById('difficultybtn');
+            soundbtn.onclick = ()=>{ soundenabled = !soundenabled; soundbtn.innerText = soundenabled ? "ON" : "OFF"; };
+            diffbtn.onclick = ()=>{
+                difficulty = (difficulty+1)%3;
+                if(difficulty===0) diffbtn.innerText="EASY";
+                else if(difficulty===1) diffbtn.innerText="NORMAL";
+                else diffbtn.innerText="HARD";
+            };
+        }
+
+        function initkeyboard(){
+            window.addEventListener('keydown', (e)=>{
+                let k = e.key.toLowerCase();
+                if(k === 'a') inputs.p1left=true;
+                if(k === 'd') inputs.p1right=true;
+                if(k === 'w') inputs.p1jump=true;
+                if(k === 's') inputs.p1crouch=true;
+                if(k === 'f') inputs.p1light=true;
+                if(k === 'g') inputs.p1heavy=true;
+                if(k === 'h') inputs.p1block=true;
+                if(k === 'r') inputs.p1laser=true;
+                if(k === 'e') inputs.p1spin=true;
+                e.preventDefault();
+            });
+            window.addEventListener('keyup', (e)=>{
+                let k = e.key.toLowerCase();
+                if(k === 'a') inputs.p1left=false;
+                if(k === 'd') inputs.p1right=false;
+                if(k === 'w') inputs.p1jump=false;
+                if(k === 's') inputs.p1crouch=false;
+                if(k === 'f') inputs.p1light=false;
+                if(k === 'g') inputs.p1heavy=false;
+                if(k === 'h') inputs.p1block=false;
+                if(k === 'r') inputs.p1laser=false;
+                if(k === 'e') inputs.p1spin=false;
+            });
+        }
+
+        function inittouch(){
+            document.querySelectorAll('.touchbtn').forEach(btn=>{
+                let action = btn.getAttribute('data-touch');
+                btn.addEventListener('touchstart', (e)=>{ e.preventDefault(); if(action) touchflags[action]=true; });
+                btn.addEventListener('touchend', (e)=>{ e.preventDefault(); if(action) touchflags[action]=false; });
+                btn.addEventListener('mousedown', (e)=>{ e.preventDefault(); if(action) touchflags[action]=true; });
+                btn.addEventListener('mouseup', (e)=>{ e.preventDefault(); if(action) touchflags[action]=false; });
+            });
+        }
+
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.moveTo(x+r, y);
+                this.lineTo(x+w-r, y);
+                this.quadraticCurveTo(x+w, y, x+w, y+r);
+                this.lineTo(x+w, y+h-r);
+                this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+                this.lineTo(x+r, y+h);
+                this.quadraticCurveTo(x, y+h, x, y+h-r);
+                this.lineTo(x, y+r);
+                this.quadraticCurveTo(x, y, x+r, y);
+                return this;
+            };
+        }
+
+        loadstats();
+        initbuttons();
+        initkeyboard();
+        inittouch();
+        resetmatch();
+        gameactive = false;
+        gamestate = 'menu';
+        loop();
+    })();
+</script>
+</body>
+</html>
