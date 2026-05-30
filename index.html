@@ -51,7 +51,7 @@
             <div class="logo"><span class="logotext">axovvy games</span></div>
             <div class="searchbar"><input type="text" id="searchinput" placeholder="Search games..."></div>
             <div class="navcontrols">
-                <button id="themebtn" class="iconbtn">🌙</button>
+                <button id="themebtn" class="iconbtn"></button>
                 <select id="devicefilter">
                     <option value="all">All Devices</option>
                     <option value="pc">PC Only</option>
@@ -101,8 +101,8 @@
         function renderfeatured() {
             if (allgames.length === 0) return;
             const featuredgame = allgames[0];
-            const featuredd div = document.getElementById('featuredgamediv');
-            featuredd div.innerHTML = `
+            const featuredddiv = document.getElementById('featuredgamediv');
+            featuredddiv.innerHTML = `
                 <div class="featuredimage">🎮</div>
                 <div class="featuredinfo">
                     <h3>${featuredgame.name}</h3>
@@ -150,7 +150,7 @@
             const modalname = document.getElementById('modalgamename');
             const gameframe = document.getElementById('gameframe');
             modalname.textContent = game.name;
-            gameframe.src = `https://raw.githubusercontent.com/axovvygames/games/main/${game.folder}/${game.mainfile}`;
+            gameframe.src = `https://raw.githubusercontent.com/axomwebsites/axovvygames/main/${game.folder}/${game.mainfile}`;
             modal.classList.add('active');
         }
         
@@ -164,7 +164,7 @@
         function toggletheme() {
             currenttheme = currenttheme === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', currenttheme);
-            document.getElementById('themebtn').textContent = currenttheme === 'dark' ? '🌙' : '☀️';
+            document.getElementById('themebtn').textContent = currenttheme === 'dark' ? '' : '☀️';
         }
         
         function filtergames() {
