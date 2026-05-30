@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AXIDRY</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', 'Fira Code', monospace;
+            touch-action: manipulation;
+            padding: 16px;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        body.dark {
+            background: #000000;
+        }
+
+        body.light {
+            background: linear-gradient(145deg, #cfd9e6, #eef2f7);
+        }
+
+        .game-shell {
+            border-radius: 2.5rem;
+            padding: 1rem;
+            transition: background 0.2s, box-shadow 0.2s, border 0.2s;
+        }
+
+        body.dark .game-shell {
+            background: #050505;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            border: 1px solid #2a2a2a;
+        }
+
+        body.light .game-shell {
+            background: #fef9ef;
+            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255,255,200,0.8);
+            border: 1px solid #c0b9a0;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 1.2rem;
+            transition: box-shadow 0.2s;
+            cursor: none;
+        }
+
+        body.dark canvas {
+            box-shadow: 0 0 0 2px #3a2a2a, 0 12px 28px black;
+        }
+
+        body.light canvas {
+            box-shadow: 0 0 0 2px #bcae7a, 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .game-dashboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            margin-bottom: 0.8rem;
+            padding: 0 0.6rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            backdrop-filter: blur(4px);
+            padding: 0.35rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            font-size: 1.5rem;
+            font-family: monospace;
+            transition: all 0.2s;
+        }
+
+        body.dark .stat {
+            background: #0a0a0a;
+            color: #f5e56b;
+            text-shadow: 0 0 3px #ffaa33;
+            border-left: 3px solid #ff3a3a;
+            border-right: 1px solid #4a3f2a;
+        }
+
+        body.light .stat {
+            background: #ffffffcc;
+            color: #b45f1b;
+            text-shadow: none;
+            border-left: 3px solid #e09d32;
+            border-right: 1px solid #ddcbaa;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .best-stat {
+            transition: all 0.2s;
+        }
+        body.dark .best-stat {
+            color: #6bc2ff;
+            text-shadow: 0 0 2px #2f8eff;
+            border-left-color: #2f9eff;
+        }
+        body.light .best-stat {
+            color: #2c6e9e;
+            border-left-color: #3a86c8;
+        }
+
+        .mode-switch {
+            border-radius: 3rem;
+            display: flex;
+            gap: 0.2rem;
+            padding: 0.2rem;
+            transition: background 0.2s;
+        }
+        body.dark .mode-switch {
+            background: #0f0f0f;
+            border: 1px solid #2c2c2c;
+        }
+        body.light .mode-switch {
+            background: #e5dfcf;
+            border: 1px solid #c8bc97;
+        }
+
+        .mode-btn {
+            font-family: monospace;
+            font-weight: bold;
+            background: transparent;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.1s linear;
+        }
+        body.dark .mode-btn {
+            color: #a0a8d0;
+        }
+        body.light .mode-btn {
+            color: #594f3a;
+        }
+        .mode-btn.active {
+            background: #f2b33b;
+            color: #0a0c1a;
+            box-shadow: 0 0 6px #ffc285;
+        }
+        body.light .mode-btn.active {
+            background: #e09d32;
+            color: white;
+            box-shadow: 0 0 4px #cb7b1f;
+        }
+
+        .reset-act {
+            border: none;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 1.2rem;
+            padding: 0.35rem 1.2rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: 0.07s linear;
+            box-shadow: 0 3px 0 #070914;
+            transform: translateY(-1px);
+        }
+        body.dark .reset-act {
+            background: #1a1a1a;
+            color: #ffdf8c;
+            box-shadow: 0 3px 0 #000000;
+        }
+        body.light .reset-act {
+            background: #efe3cd;
+            color: #8b6946;
+            box-shadow: 0 3px 0 #bba87f;
+        }
+        .reset-act:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #070914;
+        }
+
+        .footer-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.8rem;
+            padding: 0 0.8rem;
+        }
+
+        .ctrl-note {
+            padding: 0.2rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            transition: 0.2s;
+        }
+        body.dark .ctrl-note {
+            background: #0a0a0a;
+            color: #9ca3cf;
+        }
+        body.light .ctrl-note {
+            background: #f2ebdd;
+            color: #6a5a40;
+        }
+
+        .theme-toggle, .mute-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.9rem;
+            border-radius: 2rem;
+            font-family: monospace;
+            font-weight: bold;
+            transition: 0.1s;
+        }
+        body.dark .theme-toggle, body.dark .mute-toggle {
+            background: #1a1a1a;
+            color: #ffdf8c;
+            border: 1px solid #3a3a3a;
+        }
+        body.light .theme-toggle, body.light .mute-toggle {
+            background: #e2d8c4;
+            color: #3b2e1e;
+            border: 1px solid #c8b888;
+        }
+
+        .credit-tag {
+            padding: 0.2rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        body.dark .credit-tag {
+            background: #0a0a0a;
+            color: #e0aaff;
+        }
+        body.light .credit-tag {
+            background: #f2ebdd;
+            color: #8b6946;
+        }
+        .red-dot {
+            width: 12px;
+            height: 12px;
+            background: #ff1a1a;
+            border-radius: 2px;
+            transform: rotate(45deg);
+            box-shadow: 0 0 5px #ff4d4d;
+        }
+
+        @media (max-width: 680px) {
+            .stat { font-size: 1rem; padding: 0.2rem 0.7rem; }
+            .mode-btn { padding: 0.2rem 0.6rem; font-size: 0.7rem; }
+            .reset-act { font-size: 0.85rem; padding: 0.2rem 0.9rem; }
+            .theme-toggle, .mute-toggle { font-size: 0.65rem; padding: 0.1rem 0.6rem; }
+            .ctrl-note { font-size: 0.6rem; }
+        }
+    </style>
+</head>
+<body class="dark">
+<div>
+    <div class="game-shell">
+        <canvas id="gameCanvas" width="800" height="550"></canvas>
+        <div class="game-dashboard">
+            <div class="stat">SCORE: <span id="scoreValue">0</span></div>
+            <div class="stat best-stat">BEST: <span id="highValue">0</span></div>
+            <div class="mode-switch">
+                <button class="mode-btn" id="singleModeBtn">SOLO</button>
+                <button class="mode-btn" id="pvpModeBtn">VS BOT</button>
+            </div>
+            <button class="reset-act" id="resetGameBtn">RESTART</button>
+        </div>
+        <div class="footer-bar">
+            <div class="ctrl-note">MOVE → MOUSE / TOUCH     |     CLICK / TAP → DASH</div>
+            <div style="display: flex; gap: 6px;">
+                <button class="mute-toggle" id="muteToggleBtn">SOUND ON</button>
+                <button class="theme-toggle" id="themeToggleBtn">DARK</button>
+                <div class="credit-tag">
+                    <div class="red-dot"></div>
+                    <span>axom</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = 800, H = 550;
+
+    let soundMuted = false;
+    
+    class SoundManager {
+        constructor() {
+            this.enabled = true;
+            this.sounds = {};
+            this.initSounds();
+        }
+        
+        setMuted(muted) {
+            this.enabled = !muted;
+        }
+        
+        initSounds() {
+            this.sounds.collect = this.createOscillatorSound('collect');
+            this.sounds.dash = this.createOscillatorSound('dash');
+            this.sounds.gameover = this.createOscillatorSound('gameover');
+            this.sounds.error = this.createOscillatorSound('error');
+        }
+        
+        createOscillatorSound(type) {
+            return () => {
+                if (!this.enabled) return;
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const now = audioContext.currentTime;
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    switch(type) {
+                        case 'collect':
+                            oscillator.frequency.value = 880;
+                            oscillator.type = 'sine';
+                            gainNode.gain.setValueAtTime(0.2, now);
+                            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+                            oscillator.start(now);
+                            oscillator.stop(now + 0.2);
+                            break;
+                        case 'dash':
+                            oscillator.frequency.value = 440;
+                            oscillator.type = 'square';
+                            gainNode.gain.setValueAtTime(0.15, now);
+                            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+                            oscillator.start(now);
+                            oscillator.stop(now + 0.15);
+                            const osc2 = audioContext.createOscillator();
+                            const gain2 = audioContext.createGain();
+                            osc2.connect(gain2);
+                            gain2.connect(audioContext.destination);
+                            osc2.frequency.value = 660;
+                            osc2.type = 'sawtooth';
+                            gain2.gain.setValueAtTime(0.1, now);
+                            gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+                            osc2.start(now);
+                            osc2.stop(now + 0.12);
+                            break;
+                        case 'gameover':
+                            oscillator.frequency.value = 220;
+                            oscillator.type = 'triangle';
+                            gainNode.gain.setValueAtTime(0.25, now);
+                            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+                            oscillator.start(now);
+                            oscillator.stop(now + 0.5);
+                            const oscLow = audioContext.createOscillator();
+                            const gainLow = audioContext.createGain();
+                            oscLow.connect(gainLow);
+                            gainLow.connect(audioContext.destination);
+                            oscLow.frequency.value = 164.81;
+                            oscLow.type = 'sine';
+                            gainLow.gain.setValueAtTime(0.2, now + 0.2);
+                            gainLow.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+                            oscLow.start(now + 0.2);
+                            oscLow.stop(now + 0.7);
+                            break;
+                        case 'error':
+                            oscillator.frequency.value = 300;
+                            oscillator.type = 'sawtooth';
+                            gainNode.gain.setValueAtTime(0.12, now);
+                            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+                            oscillator.start(now);
+                            oscillator.stop(now + 0.25);
+                            break;
+                    }
+                    setTimeout(() => audioContext.close(), 800);
+                } catch(e) { }
+            };
+        }
+        
+        playCollect() { if(this.sounds.collect) this.sounds.collect(); }
+        playDash() { if(this.sounds.dash) this.sounds.dash(); }
+        playGameOver() { if(this.sounds.gameover) this.sounds.gameover(); }
+        playError() { if(this.sounds.error) this.sounds.error(); }
+    }
+    
+    const sound = new SoundManager();
+    
+    let gameMode = "SOLO";
+    let gameActive = true;
+    
+    let player = { x: W/2, y: H/2 };
+    const PLAYER_RADIUS = 17;
+    
+    let bot = { x: W-80, y: H/2, active: false };
+    const BOT_RADIUS = 17;
+    
+    let stars = [];
+    const STAR_RADIUS = 11;
+    const STAR_COUNT = 16;
+    
+    let obstacles = [];
+    const OBSTACLE_RADIUS = 15;
+    const OBSTACLE_COUNT = 5;
+    
+    let isDashing = false;
+    let dashFrames = 0;
+    const DASH_DURATION = 8;
+    let dashCooldown = 0;
+    const DASH_COOLDOWN_MAX = 45;
+    let dashVisual = 0;
+    
+    let score = 0;
+    let highScore = 0;
+    let botScore = 0;
+    let lastGameOverPlayed = false;
+    
+    try {
+        const saved = localStorage.getItem('axidryHigh');
+        if(saved && !isNaN(parseInt(saved))) highScore = parseInt(saved);
+    } catch(e) {}
+    
+    let mouseX = player.x, mouseY = player.y;
+    let particles = [];
+    
+    function randomRange(min, max) {
+        return min + Math.random() * (max - min);
+    }
+    
+    function isOverlapWithPlayer(x, y, r, checkBot = false) {
+        let dx = x - player.x, dy = y - player.y;
+        if(Math.hypot(dx, dy) < r + PLAYER_RADIUS + 6) return true;
+        if(gameMode === "PVP" && bot.active) {
+            let dxb = x - bot.x, dyb = y - bot.y;
+            if(Math.hypot(dxb, dyb) < r + BOT_RADIUS + 6) return true;
+        }
+        return false;
+    }
+    
+    function isOverlapWithObstacles(x, y, r, ignoreIdx = -1) {
+        for(let i=0;i<obstacles.length;i++) {
+            if(i === ignoreIdx) continue;
+            let dx = x - obstacles[i].x, dy = y - obstacles[i].y;
+            if(Math.hypot(dx, dy) < r + obstacles[i].r + 5) return true;
+        }
+        return false;
+    }
+    
+    function isOverlapWithStars(x, y, r, ignoreStar = null) {
+        for(let s of stars) {
+            if(ignoreStar === s) continue;
+            let dx = x - s.x, dy = y - s.y;
+            if(Math.hypot(dx, dy) < r + STAR_RADIUS + 5) return true;
+        }
+        return false;
+    }
+    
+    function getSafeSpot(radius, forBot = false) {
+        let attempts = 0;
+        while(attempts < 180) {
+            let rx = randomRange(radius+12, W-radius-12);
+            let ry = randomRange(radius+12, H-radius-12);
+            let playerOverlap = (Math.hypot(rx - player.x, ry - player.y) < radius + PLAYER_RADIUS + 12);
+            let botOverlap = false;
+            if(gameMode === "PVP" && bot.active) {
+                botOverlap = (Math.hypot(rx - bot.x, ry - bot.y) < radius + BOT_RADIUS + 12);
+            }
+            let obsOverlap = isOverlapWithObstacles(rx, ry, radius);
+            let starOverlap = isOverlapWithStars(rx, ry, radius);
+            if(!playerOverlap && !botOverlap && !obsOverlap && !starOverlap) {
+                return { x: rx, y: ry };
+            }
+            attempts++;
+        }
+        return { x: 100 + Math.random() * (W-200), y: 100 + Math.random() * (H-200) };
+    }
+    
+    function initStars() {
+        stars = [];
+        for(let i=0;i<STAR_COUNT;i++) {
+            let pos = getSafeSpot(STAR_RADIUS);
+            stars.push({ x: pos.x, y: pos.y, r: STAR_RADIUS });
+        }
+    }
+    
+    function initObstacles() {
+        obstacles = [];
+        for(let i=0;i<OBSTACLE_COUNT;i++) {
+            let placed = false;
+            let tries = 0;
+            while(!placed && tries < 100) {
+                let x = randomRange(OBSTACLE_RADIUS+25, W-OBSTACLE_RADIUS-25);
+                let y = randomRange(OBSTACLE_RADIUS+25, H-OBSTACLE_RADIUS-25);
+                let distToPlayer = Math.hypot(x - player.x, y - player.y);
+                let distToBot = gameMode === "PVP" ? Math.hypot(x - bot.x, y - bot.y) : 999;
+                if(distToPlayer > PLAYER_RADIUS+OBSTACLE_RADIUS+35 && distToBot > BOT_RADIUS+OBSTACLE_RADIUS+35) {
+                    let coll = false;
+                    for(let o of obstacles) {
+                        if(Math.hypot(x - o.x, y - o.y) < OBSTACLE_RADIUS*2+8) { coll=true; break; }
+                    }
+                    if(!coll && !isOverlapWithStars(x, y, OBSTACLE_RADIUS)) {
+                        obstacles.push({ x: x, y: y, r: OBSTACLE_RADIUS });
+                        placed = true;
+                    }
+                }
+                tries++;
+            }
+            if(!placed) obstacles.push({ x: 140+(i*70), y: 100+(i%3)*110, r: OBSTACLE_RADIUS });
+        }
+    }
+    
+    function respawnStar(starObj) {
+        let newPos = getSafeSpot(STAR_RADIUS);
+        starObj.x = newPos.x;
+        starObj.y = newPos.y;
+    }
+    
+    function addSparkle(px, py) {
+        for(let i=0;i<12;i++) {
+            let ang = Math.random() * Math.PI*2;
+            let spd = randomRange(1, 3.6);
+            particles.push({
+                x: px, y: py,
+                vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd,
+                life: 0.92,
+                size: randomRange(2.5, 6),
+                color: `hsl(${45+Math.random()*25}, 90%, 68%)`
+            });
+        }
+    }
+    
+    function updateParticles() {
+        for(let i=0;i<particles.length;i++) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.028;
+            p.size *= 0.97;
+            if(p.life <= 0.02 || p.x < -40 || p.x > W+40 || p.y < -40 || p.y > H+40) {
+                particles.splice(i,1);
+                i--;
+            }
+        }
+    }
+    
+    function activateDash() {
+        if(!gameActive) return;
+        if(dashCooldown > 0) {
+            sound.playError();
+            return;
+        }
+        if(isDashing) return;
+        isDashing = true;
+        dashFrames = DASH_DURATION;
+        dashCooldown = DASH_COOLDOWN_MAX;
+        dashVisual = 6;
+        sound.playDash();
+    }
+    
+    function resetGame() {
+        gameActive = true;
+        lastGameOverPlayed = false;
+        score = 0;
+        botScore = 0;
+        updateUI();
+        player.x = W/2;
+        player.y = H/2;
+        if(gameMode === "PVP") {
+            bot.active = true;
+            bot.x = W-70;
+            bot.y = H/2;
+        } else {
+            bot.active = false;
+        }
+        mouseX = player.x;
+        mouseY = player.y;
+        isDashing = false;
+        dashFrames = 0;
+        dashCooldown = 0;
+        dashVisual = 0;
+        particles = [];
+        initObstacles();
+        initStars();
+    }
+    
+    function updateUI() {
+        if(gameMode === "PVP") {
+            document.getElementById('scoreValue').innerText = score + " : " + botScore;
+        } else {
+            document.getElementById('scoreValue').innerText = score;
+        }
+        if(score > highScore) {
+            highScore = score;
+            document.getElementById('highValue').innerText = highScore;
+            localStorage.setItem('axidryHigh', highScore);
+        }
+    }
+    
+    function collectStarsForPlayer() {
+        if(!gameActive) return;
+        for(let i=0;i<stars.length;i++) {
+            let s = stars[i];
+            if(Math.hypot(player.x - s.x, player.y - s.y) < PLAYER_RADIUS + STAR_RADIUS) {
+                score++;
+                sound.playCollect();
+                addSparkle(s.x, s.y);
+                respawnStar(s);
+                updateUI();
+            }
+        }
+    }
+    
+    function botCollect() {
+        if(gameMode !== "PVP") return;
+        if(!gameActive) return;
+        for(let i=0;i<stars.length;i++) {
+            let s = stars[i];
+            if(Math.hypot(bot.x - s.x, bot.y - s.y) < BOT_RADIUS + STAR_RADIUS) {
+                botScore++;
+                addSparkle(s.x, s.y);
+                respawnStar(s);
+                updateUI();
+            }
+        }
+    }
+    
+    function botMovement() {
+        if(gameMode !== "PVP") return;
+        if(!gameActive) return;
+        let nearestStar = null;
+        let minDist = Infinity;
+        for(let s of stars) {
+            let d = Math.hypot(bot.x - s.x, bot.y - s.y);
+            if(d < minDist) {
+                minDist = d;
+                nearestStar = s;
+            }
+        }
+        if(nearestStar) {
+            let dx = nearestStar.x - bot.x;
+            let dy = nearestStar.y - bot.y;
+            let len = Math.hypot(dx, dy);
+            if(len > 0.01) {
+                let move = Math.min(4.2, len);
+                let stepX = (dx/len) * move;
+                let stepY = (dy/len) * move;
+                bot.x += stepX;
+                bot.y += stepY;
+            }
+        } else {
+            bot.x += (Math.random() - 0.5) * 2.2;
+            bot.y += (Math.random() - 0.5) * 2.2;
+        }
+        bot.x = Math.min(Math.max(bot.x, BOT_RADIUS+4), W-BOT_RADIUS-4);
+        bot.y = Math.min(Math.max(bot.y, BOT_RADIUS+4), H-BOT_RADIUS-4);
+        
+        for(let obs of obstacles) {
+            let dx = bot.x - obs.x;
+            let dy = bot.y - obs.y;
+            let dist = Math.hypot(dx, dy);
+            if(dist < BOT_RADIUS + obs.r) {
+                let angle = Math.atan2(dy, dx);
+                let push = (BOT_RADIUS + obs.r - dist) * 1.2;
+                bot.x += Math.cos(angle) * push;
+                bot.y += Math.sin(angle) * push;
+            }
+        }
+        bot.x = Math.min(Math.max(bot.x, BOT_RADIUS+2), W-BOT_RADIUS-2);
+        bot.y = Math.min(Math.max(bot.y, BOT_RADIUS+2), H-BOT_RADIUS-2);
+    }
+    
+    function checkCollisionWithObstacles(entity, radius, isPlayer) {
+        if(!gameActive) return false;
+        if(isPlayer && isDashing) return false;
+        for(let obs of obstacles) {
+            if(Math.hypot(entity.x - obs.x, entity.y - obs.y) < radius + obs.r) {
+                if(isPlayer && gameActive) {
+                    gameActive = false;
+                    if(!lastGameOverPlayed) {
+                        sound.playGameOver();
+                        lastGameOverPlayed = true;
+                    }
+                }
+                else return true;
+            }
+        }
+        return false;
+    }
+    
+    function playerCollision() {
+        checkCollisionWithObstacles(player, PLAYER_RADIUS, true);
+        if(gameMode === "PVP" && gameActive) {
+            if(Math.hypot(player.x - bot.x, player.y - bot.y) < PLAYER_RADIUS + BOT_RADIUS) {
+                gameActive = false;
+                if(!lastGameOverPlayed) {
+                    sound.playGameOver();
+                    lastGameOverPlayed = true;
+                }
+            }
+        }
+    }
+    
+    function updatePlayerPosition() {
+        if(!gameActive) return;
+        let targetX = mouseX, targetY = mouseY;
+        targetX = Math.min(Math.max(targetX, PLAYER_RADIUS+3), W-PLAYER_RADIUS-3);
+        targetY = Math.min(Math.max(targetY, PLAYER_RADIUS+3), H-PLAYER_RADIUS-3);
+        let lerp = 0.34;
+        player.x += (targetX - player.x) * lerp;
+        player.y += (targetY - player.y) * lerp;
+        player.x = Math.min(Math.max(player.x, PLAYER_RADIUS), W-PLAYER_RADIUS);
+        player.y = Math.min(Math.max(player.y, PLAYER_RADIUS), H-PLAYER_RADIUS);
+    }
+    
+    function updateTimers() {
+        if(dashFrames > 0) { dashFrames--; if(dashFrames<=0) isDashing=false; }
+        if(dashCooldown > 0) dashCooldown--;
+        if(dashVisual > 0) dashVisual--;
+    }
+    
+    function drawBackground() {
+        const isLightTheme = document.body.classList.contains('light');
+        if(isLightTheme) {
+            let grad = ctx.createLinearGradient(0,0,0,H);
+            grad.addColorStop(0, '#f5efdf');
+            grad.addColorStop(1, '#faf3e6');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,W,H);
+            for(let i=0;i<90;i++) {
+                ctx.globalAlpha = 0.2;
+                ctx.fillStyle = `#bba37c`;
+                ctx.beginPath();
+                ctx.arc( (i*211)%W, (i*97)%H, 1.2, 0, Math.PI*2);
+                ctx.fill();
+            }
+        } else {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0,0,W,H);
+            for(let i=0;i<160;i++) {
+                ctx.globalAlpha = 0.35;
+                ctx.fillStyle = `#ff3a3a`;
+                ctx.beginPath();
+                ctx.arc( (i*211)%W, (i*97)%H, 1.0, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+        ctx.globalAlpha = 1;
+    }
+    
+    function drawObstacles() {
+        for(let obs of obstacles) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#ff0000";
+            ctx.beginPath();
+            ctx.arc(obs.x, obs.y, obs.r, 0, Math.PI*2);
+            ctx.fillStyle = "#8b0000";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(obs.x-1, obs.y-1, obs.r-3, 0, Math.PI*2);
+            ctx.fillStyle = "#cc0000";
+            ctx.fill();
+            ctx.fillStyle = "#ff6666";
+            ctx.beginPath();
+            ctx.arc(obs.x-4, obs.y-3, 2.2, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(obs.x+4, obs.y-3, 2.2, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#2a0000";
+            ctx.beginPath();
+            ctx.arc(obs.x-4.3, obs.y-3.2, 0.9, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(obs.x+4.3, obs.y-3.2, 0.9, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+    
+    function drawStars() {
+        for(let s of stars) {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#f5bc70";
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, STAR_RADIUS-1, 0, Math.PI*2);
+            ctx.fillStyle = "#FFD894";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, STAR_RADIUS-3, 0, Math.PI*2);
+            ctx.fillStyle = "#FFB347";
+            ctx.fill();
+            for(let k=0;k<5;k++) {
+                let ang = (k*72 + Date.now()*0.008) * Math.PI/180;
+                let x1 = s.x + Math.cos(ang)*(STAR_RADIUS-2);
+                let y1 = s.y + Math.sin(ang)*(STAR_RADIUS-2);
+                let x2 = s.x + Math.cos(ang+0.45)*(STAR_RADIUS+4);
+                let y2 = s.y + Math.sin(ang+0.45)*(STAR_RADIUS+4);
+                ctx.beginPath();
+                ctx.moveTo(x1,y1);
+                ctx.lineTo(x2,y2);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#FFE5A3";
+                ctx.stroke();
+            }
+            ctx.fillStyle = "#FFF0B5";
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, STAR_RADIUS-5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+    
+    function drawPlayerChar() {
+        let flashing = (dashVisual>0 && (Math.floor(Date.now()/50)%2===0));
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "#fdad3a";
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, PLAYER_RADIUS, 0, Math.PI*2);
+        let grad = ctx.createRadialGradient(player.x-3, player.y-3, 5, player.x, player.y, PLAYER_RADIUS);
+        grad.addColorStop(0, '#FCE9B4');
+        grad.addColorStop(1, '#F2A65A');
+        ctx.fillStyle = grad;
+        ctx.fill();
+        if(isDashing || flashing) {
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, PLAYER_RADIUS+2, 0, Math.PI*2);
+            ctx.strokeStyle = "#FFFDEF";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+        }
+        ctx.fillStyle = "#1C160C";
+        ctx.beginPath();
+        ctx.arc(player.x-6, player.y-4, 3, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(player.x+6, player.y-4, 3, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = "#FEF2DA";
+        ctx.beginPath();
+        ctx.arc(player.x-5, player.y-5, 1.2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(player.x+7, player.y-5, 1.2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = "#C16E2E";
+        ctx.beginPath();
+        ctx.ellipse(player.x, player.y+3, 6, 3, 0, 0, Math.PI*2);
+        ctx.fill();
+        if(dashCooldown>0){
+            let per = dashCooldown/DASH_COOLDOWN_MAX;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, PLAYER_RADIUS+5, -Math.PI/2, -Math.PI/2+(1-per)*Math.PI*2);
+            ctx.strokeStyle = "#3dd4ff";
+            ctx.lineWidth=2.2;
+            ctx.stroke();
+        }
+        ctx.shadowBlur=0;
+    }
+    
+    function drawBotChar() {
+        if(gameMode !== "PVP") return;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "#ff5555";
+        ctx.beginPath();
+        ctx.arc(bot.x, bot.y, BOT_RADIUS, 0, Math.PI*2);
+        let gradBot = ctx.createLinearGradient(bot.x-5, bot.y-5, bot.x+5, bot.y+5);
+        gradBot.addColorStop(0, "#cf4444");
+        gradBot.addColorStop(1, "#972b2b");
+        ctx.fillStyle = gradBot;
+        ctx.fill();
+        ctx.fillStyle = "#FFD0A0";
+        ctx.beginPath();
+        ctx.arc(bot.x-5, bot.y-4, 2.5, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(bot.x+5, bot.y-4, 2.5, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = "#1A0A0A";
+        ctx.beginPath();
+        ctx.arc(bot.x-5, bot.y-4, 1, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(bot.x+5, bot.y-4, 1, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = "#AA2E2E";
+        ctx.beginPath();
+        ctx.ellipse(bot.x, bot.y+3, 5, 2.5, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+    
+    function drawParticles() {
+        for(let p of particles) {
+            ctx.globalAlpha = p.life*0.9;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+    
+    function drawGameOver() {
+        if(!gameActive){
+            ctx.fillStyle = "rgba(0,0,0,0.92)";
+            ctx.fillRect(0,0,W,H);
+            ctx.font = "bold 42px 'Courier New', monospace";
+            ctx.fillStyle = "#ff5e3a";
+            ctx.textAlign = "center";
+            ctx.fillText("GAME OVER", W/2, H/2-30);
+            ctx.font = "18px monospace";
+            ctx.fillStyle = "#aa88ff";
+            ctx.fillText("press RESTART", W/2, H/2+35);
+        }
+    }
+    
+    function updateGameLoop() {
+        if(!gameActive){
+            updateParticles();
+            drawBackground();
+            drawObstacles();
+            drawStars();
+            drawPlayerChar();
+            if(gameMode==="PVP") drawBotChar();
+            drawParticles();
+            drawGameOver();
+            requestAnimationFrame(updateGameLoop);
+            return;
+        }
+        updateTimers();
+        updatePlayerPosition();
+        collectStarsForPlayer();
+        if(gameMode === "PVP"){
+            botMovement();
+            botCollect();
+            checkCollisionWithObstacles(bot, BOT_RADIUS, false);
+        }
+        playerCollision();
+        updateParticles();
+        
+        drawBackground();
+        drawObstacles();
+        drawStars();
+        drawPlayerChar();
+        if(gameMode === "PVP") drawBotChar();
+        drawParticles();
+        
+        requestAnimationFrame(updateGameLoop);
+    }
+    
+    function handleMove(e) {
+        let rect = canvas.getBoundingClientRect();
+        let sx = canvas.width/rect.width;
+        let sy = canvas.height/rect.height;
+        let cx, cy;
+        if(e.touches){
+            if(!e.touches.length) return;
+            cx = e.touches[0].clientX;
+            cy = e.touches[0].clientY;
+        } else {
+            cx = e.clientX;
+            cy = e.clientY;
+        }
+        let canvasX = (cx - rect.left)*sx;
+        let canvasY = (cy - rect.top)*sy;
+        canvasX = Math.min(Math.max(canvasX, 0), W);
+        canvasY = Math.min(Math.max(canvasY, 0), H);
+        mouseX = canvasX;
+        mouseY = canvasY;
+    }
+    
+    function dashTrigger(e){
+        e.preventDefault();
+        activateDash();
+    }
+    
+    function bindEvents(){
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('click', dashTrigger);
+        canvas.addEventListener('touchstart', (e)=>{ e.preventDefault(); dashTrigger(e); handleMove(e); });
+        canvas.addEventListener('touchmove', (e)=>{ e.preventDefault(); handleMove(e); });
+        document.getElementById('resetGameBtn').addEventListener('click', ()=>{ resetGame(); });
+        document.getElementById('singleModeBtn').addEventListener('click', ()=>{
+            gameMode = "SOLO";
+            document.getElementById('singleModeBtn').classList.add('active');
+            document.getElementById('pvpModeBtn').classList.remove('active');
+            resetGame();
+        });
+        document.getElementById('pvpModeBtn').addEventListener('click', ()=>{
+            gameMode = "PVP";
+            document.getElementById('pvpModeBtn').classList.add('active');
+            document.getElementById('singleModeBtn').classList.remove('active');
+            resetGame();
+        });
+        const themeBtn = document.getElementById('themeToggleBtn');
+        themeBtn.addEventListener('click', () => {
+            const body = document.body;
+            if(body.classList.contains('dark')) {
+                body.classList.remove('dark');
+                body.classList.add('light');
+                themeBtn.innerText = 'WHITE';
+            } else {
+                body.classList.remove('light');
+                body.classList.add('dark');
+                themeBtn.innerText = 'DARK';
+            }
+        });
+        const muteBtn = document.getElementById('muteToggleBtn');
+        muteBtn.addEventListener('click', () => {
+            soundMuted = !soundMuted;
+            sound.setMuted(soundMuted);
+            muteBtn.innerText = soundMuted ? 'SOUND OFF' : 'SOUND ON';
+        });
+    }
+    
+    function init(){
+        bindEvents();
+        document.getElementById('singleModeBtn').classList.add('active');
+        gameMode = "SOLO";
+        bot.active = false;
+        resetGame();
+        updateGameLoop();
+    }
+    
+    init();
+})();
+</script>
+</body>
+  </html>
